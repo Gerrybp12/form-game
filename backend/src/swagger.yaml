@@ -1,0 +1,839 @@
+openapi: 3.0.3
+info:
+  title: Form Builder API
+  version: 1.0.0
+  description: API untuk Form Builder (seperti Google Forms) - Auth, Forms, Questions, Public Respond, Submissions.
+servers:
+  - url: http://localhost:4000
+
+tags:
+  - name: Health
+  - name: Auth
+  - name: Forms
+  - name: Questions
+  - name: Public
+  - name: Submissions
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        details:
+          nullable: true
+          oneOf:
+            - type: array
+              items:
+                type: object
+            - type: object
+            - type: string
+
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string, format: email }
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+
+    FormStatus:
+      type: string
+      enum: [DRAFT, PUBLISHED]
+
+    QuestionType:
+      type: string
+      enum: [SHORT_ANSWER, MULTIPLE_CHOICE, CHECKBOX, DROPDOWN]
+
+    Option:
+      type: object
+      properties:
+        id: { type: string }
+        text: { type: string }
+        order: { type: integer }
+
+    Question:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        type: { $ref: "#/components/schemas/QuestionType" }
+        isRequired: { type: boolean }
+        order: { type: integer }
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/Option" }
+
+    FormListItem:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        status: { $ref: "#/components/schemas/FormStatus" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        _count:
+          type: object
+          properties:
+            questions: { type: integer }
+            submissions: { type: integer }
+
+    FormDetail:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        status: { $ref: "#/components/schemas/FormStatus" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        questions:
+          type: array
+          items: { $ref: "#/components/schemas/Question" }
+
+    CreateFormRequest:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        description: { type: string }
+
+    UpdateFormRequest:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string, nullable: true }
+        status: { $ref: "#/components/schemas/FormStatus" }
+
+    CreateQuestionRequest:
+      type: object
+      required: [title, type]
+      properties:
+        title: { type: string }
+        type: { $ref: "#/components/schemas/QuestionType" }
+        isRequired: { type: boolean }
+        options:
+          type: array
+          items:
+            type: object
+            required: [text]
+            properties:
+              text: { type: string }
+
+    UpdateQuestionRequest:
+      type: object
+      properties:
+        title: { type: string }
+        type: { $ref: "#/components/schemas/QuestionType" }
+        isRequired: { type: boolean }
+        options:
+          type: array
+          items:
+            type: object
+            required: [text]
+            properties:
+              text: { type: string }
+
+    PublicFormDetail:
+      allOf:
+        - $ref: "#/components/schemas/FormDetail"
+
+    SubmitAnswer:
+      type: object
+      required: [questionId]
+      properties:
+        questionId: { type: string }
+      oneOf:
+        - required: [valueText]
+          properties:
+            valueText: { type: string }
+        - required: [valueOption]
+          properties:
+            valueOption: { type: string }
+        - required: [valueOptions]
+          properties:
+            valueOptions:
+              type: array
+              items: { type: string }
+
+    SubmitResponseRequest:
+      type: object
+      required: [answers]
+      properties:
+        respondentName: { type: string }
+        respondentEmail: { type: string, format: email }
+        answers:
+          type: array
+          items: { $ref: "#/components/schemas/SubmitAnswer" }
+
+    SubmitResponseResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            submissionId: { type: string }
+
+    SubmissionListItem:
+      type: object
+      properties:
+        id: { type: string }
+        respondentName: { type: string, nullable: true }
+        respondentEmail: { type: string, format: email, nullable: true }
+        createdAt: { type: string, format: date-time }
+        _count:
+          type: object
+          properties:
+            answers: { type: integer }
+
+    SubmissionDetail:
+      type: object
+      properties:
+        id: { type: string }
+        formId: { type: string }
+        respondentName: { type: string, nullable: true }
+        respondentEmail: { type: string, format: email, nullable: true }
+        createdAt: { type: string, format: date-time }
+        answers:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              questionId: { type: string }
+              valueText: { type: string, nullable: true }
+              valueOption: { type: string, nullable: true }
+              valueOptions:
+                type: array
+                items: { type: string }
+              question:
+                type: object
+                properties:
+                  id: { type: string }
+                  title: { type: string }
+                  type: { $ref: "#/components/schemas/QuestionType" }
+                  isRequired: { type: boolean }
+
+    DataWrapperFormDetail:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/FormDetail"
+
+    DataWrapperQuestions:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Question"
+
+    DataWrapperSubmissionList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubmissionListItem"
+
+    DataWrapperSubmissionDetail:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/SubmissionDetail"
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string, example: "Budi" }
+                email: { type: string, format: email, example: "budi@mail.com" }
+                password: { type: string, minLength: 6, example: "password123" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: Email already used
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email, example: "budi@mail.com" }
+                password: { type: string, example: "password123" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResponse" }
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: "#/components/schemas/User" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /api/forms:
+    get:
+      tags: [Forms]
+      summary: List forms (owner)
+      description: Filtering/sorting via query params q, status, sort, order.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+          description: Search by title (contains, case-insensitive)
+        - name: status
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/FormStatus" }
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [createdAt, updatedAt]
+          example: updatedAt
+        - name: order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+          example: desc
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/FormListItem" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+    post:
+      tags: [Forms]
+      summary: Create form (owner)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateFormRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataWrapperFormDetail" }
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /api/forms/{formId}:
+    get:
+      tags: [Forms]
+      summary: Form detail (owner) incl. questions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: formId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataWrapperFormDetail" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Forbidden (not owner)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+    patch:
+      tags: [Forms]
+      summary: Update form (owner)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: formId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateFormRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataWrapperFormDetail" }
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+    delete:
+      tags: [Forms]
+      summary: Delete form (owner)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: formId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /api/forms/{formId}/questions:
+    get:
+      tags: [Questions]
+      summary: List questions (owner)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: formId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataWrapperQuestions" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+    post:
+      tags: [Questions]
+      summary: Create question (owner)
+      description: Option types (MULTIPLE_CHOICE/CHECKBOX/DROPDOWN) require options.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: formId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateQuestionRequest" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Question" }
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /api/forms/{formId}/questions/{questionId}:
+    patch:
+      tags: [Questions]
+      summary: Update question (owner)
+      description: If submissions exist, type/options changes are blocked (409).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: formId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: questionId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateQuestionRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Question" }
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: Constraint violation (locked after submissions)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+    delete:
+      tags: [Questions]
+      summary: Delete question (owner)
+      description: If submissions exist, deletion is blocked (409).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: formId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: questionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "409":
+          description: Constraint violation (locked after submissions)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /api/public/forms/{formId}:
+    get:
+      tags: [Public]
+      summary: Public form detail (PUBLISHED only)
+      parameters:
+        - name: formId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/PublicFormDetail" }
+        "403":
+          description: Not published
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /api/public/forms/{formId}/responses:
+    post:
+      tags: [Public]
+      summary: Submit response (public)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SubmitResponseRequest" }
+      parameters:
+        - name: formId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SubmitResponseResponse" }
+        "400":
+          description: Invalid answers / required missing
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Not published
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /api/forms/{formId}/submissions:
+    get:
+      tags: [Submissions]
+      summary: List submissions (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: formId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataWrapperSubmissionList" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /api/forms/{formId}/submissions/{submissionId}:
+    get:
+      tags: [Submissions]
+      summary: Submission detail (owner only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: formId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: submissionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataWrapperSubmissionDetail" }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
