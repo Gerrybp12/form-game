@@ -1,6 +1,4 @@
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 
 export const metadata = {
   title: "Scroll Weaver | FormBuilder",
@@ -23,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       >
         <main
           style={{
-            flex: 1, // Agar main mengisi sisa ruang antara navbar dan footer
+            flex: 1, 
             margin: "0 auto",
             width: "100%",
             maxWidth: 1024,
