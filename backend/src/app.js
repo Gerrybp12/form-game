@@ -13,7 +13,7 @@ const submissionsRoutes = require("./routes/submissions.routes");
 const swaggerUi = require("swagger-ui-express");
 const YAML = require("yamljs");
 const swaggerDocument = YAML.load("./src/swagger.yaml");
-
+const healthRoutes = require("./routes/health.routes");
 const publicRoutes = require("./routes/public.routes");
 
 
@@ -42,8 +42,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/forms", formsRoutes);
 app.use("/api/forms", questionsRoutes);   // nested under /forms/:formId/questions...
 app.use("/api/forms", submissionsRoutes); // /forms/:formId/submissions...
-
+app.use("/health", healthRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
+
 
 module.exports = app;
