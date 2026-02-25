@@ -2,11 +2,14 @@ export type User = {
   id: string;
   name: string;
   email: string;
+  avatarPath: string;
 };
 
 export type FormStatus = "DRAFT" | "PUBLISHED";
 
 export type FormListItem = {
+  pin: string;
+  isPrivate: boolean;
   id: string;
   title: string;
   description?: string | null;

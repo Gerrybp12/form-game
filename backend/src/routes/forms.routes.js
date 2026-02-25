@@ -28,6 +28,7 @@ const updateSchema = z.object({
     title: z.string().min(1).optional(),
     description: z.string().optional().nullable(),
     status: z.enum(["DRAFT", "PUBLISHED"]).optional(),
+    isPrivate: z.boolean().optional(),
   }),
 });
 

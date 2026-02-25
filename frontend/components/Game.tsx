@@ -7,13 +7,12 @@ import { clearToken } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import ManageFormsModal from "./ManageFormsModal";
+import PublicFormsModal from "./PublicFormsModal";
 
 type Plaza = {
   id: number;
   rect: { x: number; y: number; w: number; h: number }; // world coords
 };
-
-
 
 export default function Game() {
   const { user, loading } = useCurrentUser();
@@ -27,14 +26,42 @@ export default function Game() {
   const [isIntroOpen, setIsIntroOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isYourFormOpen, setIsYourFormOpen] = useState(false);
+  const [isPublicFormsOpen, setIsPublicFormsOpen] = useState(false);
 
   // ref untuk logic di Phaser update()
   const modalOpenRef = useRef(false);
+  const pendingAvatarRef = useRef<string | null>(null);
+  const appliedAvatarRef = useRef<string | null>(null);
+
+useEffect(() => {
+  const path = user?.avatarPath;
+  if (!path) return;
+
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  if (appliedAvatarRef.current === normalized) return;
+
+  appliedAvatarRef.current = normalized;
+
+  // simpan dulu kalau game/scene belum siap
+  pendingAvatarRef.current = normalized;
+
+  // kalau game sudah ada, set registry
+  const game = gameRef.current;
+  if (game) game.registry.set("avatarPath", normalized);
+
+  // kalau scene sudah ada, restart biar preload jalan pakai avatar baru
+  const scene = sceneRef.current;
+  if (scene) {
+    pendingAvatarRef.current = null;
+    scene.scene.restart();
+  }
+}, [user?.avatarPath]);
 
   // modalOpenRef harus ngikutin intro/form (bukan isModalOpen)
   useEffect(() => {
-    modalOpenRef.current = isIntroOpen || isFormOpen || isYourFormOpen;
-  }, [isIntroOpen, isFormOpen, isYourFormOpen]);
+    modalOpenRef.current =
+      isIntroOpen || isFormOpen || isYourFormOpen || isPublicFormsOpen;
+  }, [isIntroOpen, isFormOpen, isYourFormOpen, isPublicFormsOpen]);
 
   // ESC untuk nutup modal manapun
   useEffect(() => {
@@ -43,6 +70,7 @@ export default function Game() {
         setIsIntroOpen(false);
         setIsFormOpen(false);
         setIsYourFormOpen(false);
+        setIsPublicFormsOpen(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -54,7 +82,8 @@ export default function Game() {
     const scene = sceneRef.current;
     if (!scene) return;
 
-    const modalOpen = isIntroOpen || isFormOpen || isYourFormOpen;
+    const modalOpen =
+      isIntroOpen || isFormOpen || isYourFormOpen || isPublicFormsOpen;
 
     scene.input.keyboard.enabled = !modalOpen;
 
@@ -62,7 +91,7 @@ export default function Game() {
     if (!modalOpen) {
       scene.input.keyboard.resetKeys();
     }
-  }, [isIntroOpen, isFormOpen, isYourFormOpen]);
+  }, [isIntroOpen, isFormOpen, isYourFormOpen, isPublicFormsOpen]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -74,6 +103,8 @@ export default function Game() {
       const Phaser = (await import("phaser")).default;
 
       class MainScene extends Phaser.Scene {
+        playerTexKey = "player_default";
+animKeys = { down: "", side: "", up: "" };
         player!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
         cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
         keys!: {
@@ -99,10 +130,20 @@ export default function Game() {
         lastHintPlaza: number | null = null;
 
         preload() {
-          this.load.spritesheet("player", "/sprites/player.png", {
-            frameWidth: 256,
-            frameHeight: 512,
-          });
+          const avatarPath =
+    this.game.registry.get("avatarPath") ?? "/sprites/male_rouge.png";
+
+  // key unik agar tidak bentrok saat restart
+  const safe = String(avatarPath).replace(/[^a-zA-Z0-9]/g, "_");
+  this.playerTexKey = `player_${safe}`;
+
+  // load sekali per key
+  if (!this.textures.exists(this.playerTexKey)) {
+    this.load.spritesheet(this.playerTexKey, avatarPath, {
+      frameWidth: 256,
+      frameHeight: 512,
+    });
+  }
 
           this.load.spritesheet("grass", "/tiles/grass.png", {
             frameWidth: 32,
@@ -130,38 +171,44 @@ export default function Game() {
           // expose scene ke React
           sceneRef.current = this;
 
+          if (pendingAvatarRef.current) {
+  this.game.registry.set("avatarPath", pendingAvatarRef.current);
+  pendingAvatarRef.current = null;
+  this.scene.restart();
+  return; // stop create sekarang, nanti create jalan ulang
+}
+
           // kamera FIXED
           this.cameras.main.scrollX = 0;
           this.cameras.main.scrollY = 0;
 
           // anim player: 0-3 down, 4-7 side, 8-11 up
-          this.anims.create({
-            key: "walk-down",
-            frames: this.anims.generateFrameNumbers("player", {
-              start: 0,
-              end: 3,
-            }),
-            frameRate: 8,
-            repeat: -1,
-          });
-          this.anims.create({
-            key: "walk-side",
-            frames: this.anims.generateFrameNumbers("player", {
-              start: 4,
-              end: 7,
-            }),
-            frameRate: 8,
-            repeat: -1,
-          });
-          this.anims.create({
-            key: "walk-up",
-            frames: this.anims.generateFrameNumbers("player", {
-              start: 8,
-              end: 11,
-            }),
-            frameRate: 8,
-            repeat: -1,
-          });
+          this.animKeys = {
+  down: `${this.playerTexKey}_walk_down`,
+  side: `${this.playerTexKey}_walk_side`,
+  up: `${this.playerTexKey}_walk_up`,
+};
+
+if (!this.anims.exists(this.animKeys.down)) {
+  this.anims.create({
+    key: this.animKeys.down,
+    frames: this.anims.generateFrameNumbers(this.playerTexKey, { start: 0, end: 3 }),
+    frameRate: 8,
+    repeat: -1,
+  });
+  this.anims.create({
+    key: this.animKeys.side,
+    frames: this.anims.generateFrameNumbers(this.playerTexKey, { start: 4, end: 7 }),
+    frameRate: 8,
+    repeat: -1,
+  });
+  this.anims.create({
+    key: this.animKeys.up,
+    frames: this.anims.generateFrameNumbers(this.playerTexKey, { start: 8, end: 11 }),
+    frameRate: 8,
+    repeat: -1,
+  });
+}
 
           // input
           this.cursors = this.input.keyboard!.createCursorKeys();
@@ -418,7 +465,7 @@ export default function Game() {
           const spawnX = plaza2.rect.x + plaza2.rect.w / 2;
           const spawnY = plaza2.rect.y + plaza2.rect.h / 2;
 
-          this.player = this.physics.add.sprite(spawnX, spawnY, "player", 0);
+          this.player = this.physics.add.sprite(spawnX, spawnY, this.playerTexKey, 0);
           this.player.setCollideWorldBounds(true);
 
           this.player.setScale(0.25);
@@ -495,8 +542,10 @@ export default function Game() {
             if (plazaId === 2) {
               setIsIntroOpen(true);
             } else if (plazaId === 1) {
-              console.log(setIsYourFormOpen(true));
-            }else if (plazaId) {
+              setIsYourFormOpen(true);
+            } else if (plazaId === 3) {
+              setIsPublicFormsOpen(true);
+            } else if (plazaId) {
               console.log(`Interact: Plaza ${plazaId}`);
             } else {
               console.log("Interact: (not on plaza)");
@@ -531,7 +580,7 @@ export default function Game() {
 
           if (Math.abs(vx) > Math.abs(vy)) {
             this.lastDir = "side";
-            this.player.anims.play("walk-side", true);
+            this.player.anims.play(this.animKeys.side, true);
 
             // sheet side default kiri
             if (vx < 0) this.player.setFlipX(false);
@@ -540,11 +589,11 @@ export default function Game() {
             if (vy < 0) {
               this.lastDir = "up";
               this.player.setFlipX(false);
-              this.player.anims.play("walk-up", true);
+              this.player.anims.play(this.animKeys.up, true);
             } else {
               this.lastDir = "down";
               this.player.setFlipX(false);
-              this.player.anims.play("walk-down", true);
+              this.player.anims.play(this.animKeys.down, true);
             }
           }
         }
@@ -577,6 +626,8 @@ export default function Game() {
         },
       });
 
+      game.registry.set("avatarPath", "/sprites/male_rouge.png");
+
       gameRef.current = game;
     };
 
@@ -604,98 +655,97 @@ export default function Game() {
 
   return (
     <div
-    style={{
-      position: "fixed",
-      inset: 0,
-      width: "100vw",
-      height: "100vh",
-      overflow: "hidden",
-      background: "black",
-    }}
-  >
-    <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
-
-    {/* === TOP RIGHT HUD === */}
-    <div
       style={{
-        position: "absolute",
-        top: 20,
-        right: 20,
-        zIndex: 10000,
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        padding: "8px 14px",
-        borderRadius: 14,
-        background:
-          "linear-gradient(180deg, rgba(92,58,28,0.95), rgba(58,32,14,0.95))",
-        border: "2px solid rgba(40,22,10,0.95)",
-        boxShadow: "0 6px 20px rgba(0,0,0,0.5)",
-        color: "#f7ead0",
-        fontFamily: 'Georgia, "Times New Roman", serif',
-        fontWeight: 700,
+        position: "fixed",
+        inset: 0,
+        width: "100vw",
+        height: "100vh",
+        overflow: "hidden",
+        background: "black",
       }}
     >
-      {/* Username placeholder */}
+      <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
+
+      {/* === TOP RIGHT HUD === */}
       <div
         style={{
-          padding: "4px 10px",
-          borderRadius: 8,
-          background: "rgba(0,0,0,0.35)",
-          border: "1px solid rgba(255,255,255,0.1)",
+          position: "absolute",
+          top: 20,
+          right: 20,
+          zIndex: 10000,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          padding: "8px 14px",
+          borderRadius: 14,
+          background:
+            "linear-gradient(180deg, rgba(92,58,28,0.95), rgba(58,32,14,0.95))",
+          border: "2px solid rgba(40,22,10,0.95)",
+          boxShadow: "0 6px 20px rgba(0,0,0,0.5)",
+          color: "#f7ead0",
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontWeight: 700,
         }}
       >
-        {loading ? (
-          "Loading..."
-        ) : user ? (
-          <span>{user.name}</span>
-        ) : (
-          "Guest"
-        )}
+        {/* Username placeholder */}
+        <div
+          style={{
+            padding: "4px 10px",
+            borderRadius: 8,
+            background: "rgba(0,0,0,0.35)",
+            border: "1px solid rgba(255,255,255,0.1)",
+          }}
+        >
+          {loading ? "Loading..." : user ? <span>{user.name}</span> : "Guest"}
+        </div>
+
+        {/* Logout button */}
+        <button
+          onClick={() => {
+            logout();
+          }}
+          style={{
+            cursor: "pointer",
+            padding: "6px 12px",
+            borderRadius: 10,
+            fontWeight: 800,
+            background:
+              "linear-gradient(180deg, rgba(180,50,50,0.95), rgba(120,30,30,0.95))",
+            border: "2px solid rgba(60,15,15,0.95)",
+            color: "#fff",
+            boxShadow: "0 4px 10px rgba(0,0,0,0.4)",
+          }}
+        >
+          Logout
+        </button>
       </div>
 
-      {/* Logout button */}
-      <button
-        onClick={() => {
-          logout();
+      <CreateFormIntroModal
+        open={isIntroOpen}
+        onClose={() => setIsIntroOpen(false)}
+        onConfirm={() => {
+          setIsIntroOpen(false);
+          setIsFormOpen(true);
         }}
-        style={{
-          cursor: "pointer",
-          padding: "6px 12px",
-          borderRadius: 10,
-          fontWeight: 800,
-          background:
-            "linear-gradient(180deg, rgba(180,50,50,0.95), rgba(120,30,30,0.95))",
-          border: "2px solid rgba(60,15,15,0.95)",
-          color: "#fff",
-          boxShadow: "0 4px 10px rgba(0,0,0,0.4)",
+      />
+
+      <CreateFormModal
+        open={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSuccess={() => {
+          console.log("Form created successfully");
         }}
-      >
-        Logout
-      </button>
+      />
+
+      <ManageFormsModal
+        open={isYourFormOpen}
+        onClose={() => setIsYourFormOpen(false)}
+      />
+
+      <PublicFormsModal
+        open={isPublicFormsOpen}
+        onClose={() => setIsPublicFormsOpen(false)}
+      />
     </div>
-
-    <CreateFormIntroModal
-      open={isIntroOpen}
-      onClose={() => setIsIntroOpen(false)}
-      onConfirm={() => {
-        setIsIntroOpen(false);
-        setIsFormOpen(true);
-      }}
-    />
-
-    <CreateFormModal
-      open={isFormOpen}
-      onClose={() => setIsFormOpen(false)}
-      onSuccess={() => {
-        console.log("Form created successfully");
-      }}
-    />
-
-    <ManageFormsModal
-      open={isYourFormOpen}
-      onClose={() => setIsYourFormOpen(false)}
-    />
-  </div>
   );
 }

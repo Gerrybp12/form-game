@@ -225,6 +225,8 @@ export default function EditFormModal({ open, onClose, formId }: Props) {
             </h3>
             
             <Input
+            autoFocus
+            onKeyDown={(e) => e.stopPropagation()}
               label="Judul Pertanyaan"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -256,6 +258,8 @@ export default function EditFormModal({ open, onClose, formId }: Props) {
 
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 700, cursor: "pointer", marginTop: 4 }}>
               <input
+              autoFocus
+              onKeyDown={(e) => e.stopPropagation()}
                 type="checkbox"
                 checked={isRequired}
                 onChange={(e) => setIsRequired(e.target.checked)}
@@ -268,6 +272,8 @@ export default function EditFormModal({ open, onClose, formId }: Props) {
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8, paddingLeft: 12, borderLeft: "2px solid rgba(120,72,32,0.3)" }}>
                 {options.map((opt, i) => (
                   <Input
+                  autoFocus
+                  onKeyDown={(e) => e.stopPropagation()}
                     key={i}
                     label={`Opsi ${i + 1}`}
                     value={opt}

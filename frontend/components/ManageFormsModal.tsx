@@ -8,6 +8,7 @@ import Button from "@/components/ui/Button";
 import Link from "next/link";
 import EditFormModal from "./EditFormModal";
 import FormDetailModal from "./FormDetailModal";
+import ResponsesModal from "./ResponsesModal";
 
 type Props = {
   open: boolean;
@@ -22,6 +23,7 @@ export default function ManageFormsModal({ open, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [editFormId, setEditFormId] = useState<string | null>(null);
   const [detailFormId, setDetailFormId] = useState<string | null>(null);
+  const [responsesFormId, setResponsesFormId] = useState<string | null>(null);
 
   async function load() {
     try {
@@ -56,6 +58,16 @@ export default function ManageFormsModal({ open, onClose }: Props) {
     }
   }
 
+  async function togglePrivate(id: string, next: boolean) {
+    try {
+      setError(null);
+      await api.patch(`/api/forms/${id}`, { isPrivate: next });
+      await load();
+    } catch (e: any) {
+      setError(e?.response?.data?.message ?? "Gagal update privacy");
+    }
+  }
+
   useEffect(() => {
     if (open) {
       load();
@@ -76,21 +88,33 @@ export default function ManageFormsModal({ open, onClose }: Props) {
       />
     );
   }
+  if (responsesFormId) {
+    return (
+      <ResponsesModal 
+  open={!!responsesFormId} 
+  formId={responsesFormId} 
+  onClose={() => setResponsesFormId(null)} 
+/>
+    );
+  }
 
   if (detailFormId) {
-  return (
-    <FormDetailModal
-      open={true}
-      formId={detailFormId}
-      onClose={() => setDetailFormId(null)} // Tutup detail -> kembali ke List
-      onEdit={(id) => {
-        // SWAP MAGIC TERJADI DI SINI
-        setDetailFormId(null); // Tutup Detail
-        setEditFormId(id);     // Langsung buka Edit
-      }}
-    />
-  );
-}
+    return (
+      <FormDetailModal
+        open={true}
+        formId={detailFormId}
+        onClose={() => setDetailFormId(null)} // Tutup detail -> kembali ke List
+        onEdit={(id) => {
+          setDetailFormId(null); // Tutup Detail
+          setEditFormId(id); // Langsung buka Edit
+        }}
+        onRespons={(id) => {
+          setDetailFormId(null); // Tutup Detail
+          setResponsesFormId(id); // Langsung buka Edit
+        }}
+      />
+    );
+  }
 
   return (
     <div
@@ -185,11 +209,25 @@ export default function ManageFormsModal({ open, onClose }: Props) {
           )}
 
           {loading ? (
-            <div style={{ textAlign: "center", padding: "40px 0", fontWeight: 700, opacity: 0.7 }}>
+            <div
+              style={{
+                textAlign: "center",
+                padding: "40px 0",
+                fontWeight: 700,
+                opacity: 0.7,
+              }}
+            >
               Membuka arsip...
             </div>
           ) : items.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 0", fontWeight: 700, opacity: 0.7 }}>
+            <div
+              style={{
+                textAlign: "center",
+                padding: "40px 0",
+                fontWeight: 700,
+                opacity: 0.7,
+              }}
+            >
               Belum ada gulungan yang diciptakan.
             </div>
           ) : (
@@ -207,9 +245,25 @@ export default function ManageFormsModal({ open, onClose }: Props) {
                     padding: 16,
                   }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      gap: 16,
+                    }}
+                  >
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                        }}
+                      >
+                        <p className="mt-1 text-xs text-gray-500">
+                          PIN: {f.pin} {f.isPrivate ? "• Private" : ""}
+                        </p>
                         <Link
                           href={`/forms/${f.id}`}
                           style={{
@@ -227,36 +281,72 @@ export default function ManageFormsModal({ open, onClose }: Props) {
                             fontWeight: 800,
                             padding: "4px 8px",
                             borderRadius: 20,
-                            background: f.status === "PUBLISHED" ? "rgba(34, 139, 34, 0.2)" : "rgba(120, 72, 32, 0.15)",
-                            color: f.status === "PUBLISHED" ? "#006400" : "rgba(120, 72, 32, 0.95)",
+                            background:
+                              f.status === "PUBLISHED"
+                                ? "rgba(34, 139, 34, 0.2)"
+                                : "rgba(120, 72, 32, 0.15)",
+                            color:
+                              f.status === "PUBLISHED"
+                                ? "#006400"
+                                : "rgba(120, 72, 32, 0.95)",
                             border: `1px solid ${f.status === "PUBLISHED" ? "rgba(34, 139, 34, 0.4)" : "rgba(120, 72, 32, 0.3)"}`,
                           }}
                         >
                           {f.status}
                         </span>
                       </div>
-                      
+
                       {f.description && (
-                        <p style={{ marginTop: 6, marginBottom: 0, fontSize: 13, opacity: 0.85, lineHeight: 1.4 }}>
+                        <p
+                          style={{
+                            marginTop: 6,
+                            marginBottom: 0,
+                            fontSize: 13,
+                            opacity: 0.85,
+                            lineHeight: 1.4,
+                          }}
+                        >
                           {f.description}
                         </p>
                       )}
 
                       {f._count && (
-                        <p style={{ marginTop: 8, marginBottom: 0, fontSize: 12, fontWeight: 700, opacity: 0.6 }}>
-                          {f._count.questions} pertanyaan • {f._count.submissions} respon
+                        <p
+                          style={{
+                            marginTop: 8,
+                            marginBottom: 0,
+                            fontSize: 12,
+                            fontWeight: 700,
+                            opacity: 0.6,
+                          }}
+                        >
+                          {f._count.questions} pertanyaan •{" "}
+                          {f._count.submissions} respon
                         </p>
                       )}
                     </div>
                   </div>
 
                   {/* Action Buttons Row */}
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
-                    <Button onClick={() => setDetailFormId(f.id)} variant="secondary" style={{ padding: "6px 12px", fontSize: 12 }}>Detail</Button>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 8,
+                      marginTop: 4,
+                    }}
+                  >
+                    <Button
+                      onClick={() => setDetailFormId(f.id)}
+                      variant="secondary"
+                      style={{ padding: "6px 12px", fontSize: 12 }}
+                    >
+                      Detail
+                    </Button>
 
-                    <Button 
-                      variant="primary" 
-                      onClick={() => setEditFormId(f.id)} 
+                    <Button
+                      variant="primary"
+                      onClick={() => setEditFormId(f.id)}
                       style={{ padding: "6px 12px", fontSize: 12 }}
                     >
                       Edit Questions
@@ -268,27 +358,36 @@ export default function ManageFormsModal({ open, onClose }: Props) {
                       onClick={() =>
                         togglePublish(
                           f.id,
-                          f.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED"
+                          f.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED",
                         )
                       }
                     >
                       {f.status === "PUBLISHED" ? "Unpublish" : "Publish"}
                     </Button>
 
-                    <Link href={`/public/forms/${f.id}`}>
+                    <Link href={`/public/pin/${f.pin}`}>
                       <Button
                         variant="secondary"
                         disabled={f.status !== "PUBLISHED"}
-                        style={{ padding: "6px 12px", fontSize: 12 }}
                       >
-                        Public Link
+                        Open (PIN)
                       </Button>
                     </Link>
+                    <Button
+                      variant="secondary"
+                      onClick={() => togglePrivate(f.id, !f.isPrivate)}
+                    >
+                      {f.isPrivate ? "Set Public" : "Set Private"}
+                    </Button>
 
-                    <Button 
-                      variant="danger" 
+                    <Button
+                      variant="danger"
                       onClick={() => deleteForm(f.id)}
-                      style={{ padding: "6px 12px", fontSize: 12, marginLeft: "auto" }} // Margin left auto dorong delete ke kanan
+                      style={{
+                        padding: "6px 12px",
+                        fontSize: 12,
+                        marginLeft: "auto",
+                      }} // Margin left auto dorong delete ke kanan
                     >
                       Bakar
                     </Button>

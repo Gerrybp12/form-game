@@ -18,7 +18,7 @@ async function submitResponse({ formId, payload }) {
     throw err;
   }
 
-  const answerMap = new Map(payload.answers.map(a => [a.questionId, a]));
+  const answerMap = new Map(payload.answers.map((a) => [a.questionId, a]));
 
   return prisma.$transaction(async (tx) => {
     const submission = await tx.submission.create({
@@ -35,12 +35,26 @@ async function submitResponse({ formId, payload }) {
       const a = answerMap.get(q.id);
       if (!a) continue;
 
+      // normalize fields based on question type
+      let valueText = null;
+      let valueOption = null;
+      let valueOptions = [];
+
+      if (q.type === "SHORT_ANSWER") {
+        valueText = a.valueText ?? null;
+      } else if (q.type === "MULTIPLE_CHOICE" || q.type === "DROPDOWN") {
+        // accept either valueOption or (fallback) valueText
+        valueOption = a.valueOption ?? a.valueText ?? null;
+      } else if (q.type === "CHECKBOX") {
+        valueOptions = Array.isArray(a.valueOptions) ? a.valueOptions : [];
+      }
+
       answerCreates.push({
         submissionId: submission.id,
         questionId: q.id,
-        valueText: a.valueText,
-        valueOption: a.valueOption,
-        valueOptions: a.valueOptions,
+        valueText,
+        valueOption,
+        valueOptions,
       });
     }
 

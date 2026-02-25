@@ -23,6 +23,7 @@ model User {
   name         String
   email        String   @unique
   passwordHash String
+  avatarPath String?
   createdAt    DateTime @default(now())
 
   forms        Form[]
@@ -35,6 +36,9 @@ model Form {
   status      FormStatus @default(DRAFT)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+
+  pin       String   @unique
+  isPrivate Boolean  @default(false)
 
   createdById String
   createdBy   User       @relation(fields: [createdById], references: [id])
