@@ -19,15 +19,6 @@ const publicRoutes = require("./routes/public.routes");
 
 const app = express();
 
-console.log({
-  authRoutes: typeof authRoutes,
-  formsRoutes: typeof formsRoutes,
-  questionsRoutes: typeof questionsRoutes,
-  responsesRoutes: typeof responsesRoutes,
-  submissionsRoutes: typeof submissionsRoutes,
-  publicRoutes: typeof publicRoutes,
-});
-
 app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
