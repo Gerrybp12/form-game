@@ -10,14 +10,19 @@ const formsRoutes = require("./routes/forms.routes");
 const questionsRoutes = require("./routes/questions.routes");
 const submissionsRoutes = require("./routes/submissions.routes");
 
-const swaggerUi = require("swagger-ui-express");
-const YAML = require("yamljs");
 const path = require("path");
+const fs = require("fs");
 const swaggerUi = require("swagger-ui-express");
 const YAML = require("yamljs");
 
 const swaggerPath = path.join(process.cwd(), "src", "swagger.yaml");
-const swaggerDocument = YAML.load(swaggerPath);
+
+if (fs.existsSync(swaggerPath)) {
+  const swaggerDocument = YAML.load(swaggerPath);
+  app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+} else {
+  console.warn("swagger.yaml not found, skipping /api/docs");
+}
 const healthRoutes = require("./routes/health.routes");
 const publicRoutes = require("./routes/public.routes");
 
