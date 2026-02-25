@@ -9,7 +9,7 @@ type Props = {
 
 export default function CreateFormIntroModal({
   open,
-  title = "Create Form",
+  title = "Buat Gulungan",
   onClose,
   onConfirm,
 }: Props) {
