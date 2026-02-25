@@ -73,9 +73,9 @@ export default function CreateFormIntroModal({
 
         <div style={{ padding: 16, color: "rgba(40, 24, 10, 0.95)" }}>
           <div style={{ fontSize: 14, lineHeight: 1.45 }}>
-            You stand on the central plaza. A parchment seal glows faintly.
+            Kamu berdiri di alun-alun pusat. Segel perkamen bersinar samar-samar.
             <br />
-            Press <b>Create</b> to start forging a new form.
+            Tekan <b>Buat</b> untuk membuat gulungan baru.
           </div>
 
           <div
@@ -99,7 +99,7 @@ export default function CreateFormIntroModal({
                 fontWeight: 800,
               }}
             >
-              Cancel
+              Batal
             </button>
 
             <button
@@ -116,12 +116,12 @@ export default function CreateFormIntroModal({
                 letterSpacing: 0.3,
               }}
             >
-              Create
+              Buat
             </button>
           </div>
 
           <div style={{ marginTop: 10, fontSize: 12, opacity: 0.75 }}>
-            Tip: press <b>ESC</b> to close.
+            Tip: tekan <b>ESC</b> untuk menutup.
           </div>
         </div>
       </div>

@@ -33,29 +33,29 @@ export default function Game() {
   const pendingAvatarRef = useRef<string | null>(null);
   const appliedAvatarRef = useRef<string | null>(null);
 
-useEffect(() => {
-  const path = user?.avatarPath;
-  if (!path) return;
+  useEffect(() => {
+    const path = user?.avatarPath;
+    if (!path) return;
 
-  const normalized = path.startsWith("/") ? path : `/${path}`;
-  if (appliedAvatarRef.current === normalized) return;
+    const normalized = path.startsWith("/") ? path : `/${path}`;
+    if (appliedAvatarRef.current === normalized) return;
 
-  appliedAvatarRef.current = normalized;
+    appliedAvatarRef.current = normalized;
 
-  // simpan dulu kalau game/scene belum siap
-  pendingAvatarRef.current = normalized;
+    // simpan dulu kalau game/scene belum siap
+    pendingAvatarRef.current = normalized;
 
-  // kalau game sudah ada, set registry
-  const game = gameRef.current;
-  if (game) game.registry.set("avatarPath", normalized);
+    // kalau game sudah ada, set registry
+    const game = gameRef.current;
+    if (game) game.registry.set("avatarPath", normalized);
 
-  // kalau scene sudah ada, restart biar preload jalan pakai avatar baru
-  const scene = sceneRef.current;
-  if (scene) {
-    pendingAvatarRef.current = null;
-    scene.scene.restart();
-  }
-}, [user?.avatarPath]);
+    // kalau scene sudah ada, restart biar preload jalan pakai avatar baru
+    const scene = sceneRef.current;
+    if (scene) {
+      pendingAvatarRef.current = null;
+      scene.scene.restart();
+    }
+  }, [user?.avatarPath]);
 
   // modalOpenRef harus ngikutin intro/form (bukan isModalOpen)
   useEffect(() => {
@@ -104,7 +104,7 @@ useEffect(() => {
 
       class MainScene extends Phaser.Scene {
         playerTexKey = "player_default";
-animKeys = { down: "", side: "", up: "" };
+        animKeys = { down: "", side: "", up: "" };
         player!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
         cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
         keys!: {
@@ -131,19 +131,19 @@ animKeys = { down: "", side: "", up: "" };
 
         preload() {
           const avatarPath =
-    this.game.registry.get("avatarPath") ?? "/sprites/male_rouge.png";
+            this.game.registry.get("avatarPath") ?? "/sprites/male_rouge.png";
 
-  // key unik agar tidak bentrok saat restart
-  const safe = String(avatarPath).replace(/[^a-zA-Z0-9]/g, "_");
-  this.playerTexKey = `player_${safe}`;
+          // key unik agar tidak bentrok saat restart
+          const safe = String(avatarPath).replace(/[^a-zA-Z0-9]/g, "_");
+          this.playerTexKey = `player_${safe}`;
 
-  // load sekali per key
-  if (!this.textures.exists(this.playerTexKey)) {
-    this.load.spritesheet(this.playerTexKey, avatarPath, {
-      frameWidth: 256,
-      frameHeight: 512,
-    });
-  }
+          // load sekali per key
+          if (!this.textures.exists(this.playerTexKey)) {
+            this.load.spritesheet(this.playerTexKey, avatarPath, {
+              frameWidth: 256,
+              frameHeight: 512,
+            });
+          }
 
           this.load.spritesheet("grass", "/tiles/grass.png", {
             frameWidth: 32,
@@ -172,11 +172,11 @@ animKeys = { down: "", side: "", up: "" };
           sceneRef.current = this;
 
           if (pendingAvatarRef.current) {
-  this.game.registry.set("avatarPath", pendingAvatarRef.current);
-  pendingAvatarRef.current = null;
-  this.scene.restart();
-  return; // stop create sekarang, nanti create jalan ulang
-}
+            this.game.registry.set("avatarPath", pendingAvatarRef.current);
+            pendingAvatarRef.current = null;
+            this.scene.restart();
+            return; // stop create sekarang, nanti create jalan ulang
+          }
 
           // kamera FIXED
           this.cameras.main.scrollX = 0;
@@ -184,31 +184,40 @@ animKeys = { down: "", side: "", up: "" };
 
           // anim player: 0-3 down, 4-7 side, 8-11 up
           this.animKeys = {
-  down: `${this.playerTexKey}_walk_down`,
-  side: `${this.playerTexKey}_walk_side`,
-  up: `${this.playerTexKey}_walk_up`,
-};
+            down: `${this.playerTexKey}_walk_down`,
+            side: `${this.playerTexKey}_walk_side`,
+            up: `${this.playerTexKey}_walk_up`,
+          };
 
-if (!this.anims.exists(this.animKeys.down)) {
-  this.anims.create({
-    key: this.animKeys.down,
-    frames: this.anims.generateFrameNumbers(this.playerTexKey, { start: 0, end: 3 }),
-    frameRate: 8,
-    repeat: -1,
-  });
-  this.anims.create({
-    key: this.animKeys.side,
-    frames: this.anims.generateFrameNumbers(this.playerTexKey, { start: 4, end: 7 }),
-    frameRate: 8,
-    repeat: -1,
-  });
-  this.anims.create({
-    key: this.animKeys.up,
-    frames: this.anims.generateFrameNumbers(this.playerTexKey, { start: 8, end: 11 }),
-    frameRate: 8,
-    repeat: -1,
-  });
-}
+          if (!this.anims.exists(this.animKeys.down)) {
+            this.anims.create({
+              key: this.animKeys.down,
+              frames: this.anims.generateFrameNumbers(this.playerTexKey, {
+                start: 0,
+                end: 3,
+              }),
+              frameRate: 8,
+              repeat: -1,
+            });
+            this.anims.create({
+              key: this.animKeys.side,
+              frames: this.anims.generateFrameNumbers(this.playerTexKey, {
+                start: 4,
+                end: 7,
+              }),
+              frameRate: 8,
+              repeat: -1,
+            });
+            this.anims.create({
+              key: this.animKeys.up,
+              frames: this.anims.generateFrameNumbers(this.playerTexKey, {
+                start: 8,
+                end: 11,
+              }),
+              frameRate: 8,
+              repeat: -1,
+            });
+          }
 
           // input
           this.cursors = this.input.keyboard!.createCursorKeys();
@@ -418,9 +427,9 @@ if (!this.anims.exists(this.animKeys.down)) {
           const p2 = this.plazas.find((p) => p.id === 2);
           const p3 = this.plazas.find((p) => p.id === 3);
 
-          if (p1) this.createPlazaLabel(p1, "Your Forms");
-          if (p2) this.createPlazaLabel(p2, "Create Form");
-          if (p3) this.createPlazaLabel(p3, "Public Forms");
+          if (p1) this.createPlazaLabel(p1, "Koleksi Gulungan");
+          if (p2) this.createPlazaLabel(p2, "Buat Gulungan");
+          if (p3) this.createPlazaLabel(p3, "Arsip Publik");
 
           // ===== WALL BORDER =====
           this.wallLayer = this.physics.add.staticGroup();
@@ -465,7 +474,12 @@ if (!this.anims.exists(this.animKeys.down)) {
           const spawnX = plaza2.rect.x + plaza2.rect.w / 2;
           const spawnY = plaza2.rect.y + plaza2.rect.h / 2;
 
-          this.player = this.physics.add.sprite(spawnX, spawnY, this.playerTexKey, 0);
+          this.player = this.physics.add.sprite(
+            spawnX,
+            spawnY,
+            this.playerTexKey,
+            0,
+          );
           this.player.setCollideWorldBounds(true);
 
           this.player.setScale(0.25);
@@ -517,7 +531,7 @@ if (!this.anims.exists(this.animKeys.down)) {
           this.lastHintPlaza = plazaId;
 
           if (plazaId) {
-            this.hintText.setText(`Press SPACE to interact (Plaza ${plazaId})`);
+            this.hintText.setText(`tekan SPASI untuk berinteraksi (Plaza ${plazaId})`);
             this.hintText.setVisible(true);
           } else {
             this.hintText.setVisible(false);
