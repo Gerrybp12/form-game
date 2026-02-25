@@ -402,6 +402,8 @@ if (!anonymous) {
 
                     {q.type === "SHORT_ANSWER" && (
                       <Input
+                      autoFocus
+            onKeyDown={(e) => e.stopPropagation()}
                         value={answers[q.id] ?? ""}
                         onChange={(e) => setAnswer(q.id, e.target.value)}
                         placeholder="Tuliskan jawabanmu..."

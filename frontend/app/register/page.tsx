@@ -8,11 +8,39 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+// Struktur data diubah menjadi object untuk memisahkan Icon dan Path
+const CHARACTER_OPTIONS = [
+  {
+    id: "male_rouge",
+    icon: "/sprites_icon/male_rouge.png", // Gambar kecil di Register
+    path: "/sprites/male_rouge.png",                     // Value yang dikirim ke DB
+  },
+  {
+    id: "female_rouge",
+    icon: "/sprites_icon/female_rouge.png",
+    path: "/sprites/female_rouge.png",
+  },
+  {
+    id: "knight",
+    icon: "/sprites_icon/knight.png",
+    path: "/sprites/knight.png",
+  },
+  {
+    id: "princess",
+    icon: "/sprites_icon/princess.png",
+    path: "/sprites/princess.png",
+  },
+];
+
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  
+  // State sekarang menyimpan "path" dari karakter yang dipilih
+  const [characterPath, setCharacterPath] = useState(CHARACTER_OPTIONS[0].path);
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,9 +55,15 @@ export default function RegisterPage() {
 
     try {
       setLoading(true);
-      const res = await api.post("/api/auth/register", { name, email, password });
+      // characterPath (contoh: "/assets/characters/knight_full.png") dikirim ke backend
+      const res = await api.post("/api/auth/register", { 
+        name, 
+        email, 
+        password, 
+        avatarPath: characterPath 
+      });
       setToken(res.data.token);
-      router.push("/forms");
+      router.push("/");
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Register gagal");
     } finally {
@@ -128,7 +162,50 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)} 
             />
 
-            <div style={{ marginTop: 8 }}>
+            {/* Area Pemilihan Karakter */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+              <label style={{ fontSize: 14, fontWeight: 800, color: "rgba(40, 24, 10, 0.95)" }}>
+                Pilih Identitas (Avatar)
+              </label>
+              <div style={{ display: "flex", gap: 12, justifyContent: "space-between" }}>
+                {CHARACTER_OPTIONS.map((char) => {
+                  // Cek apakah path karakter ini sama dengan yang ada di state
+                  const isSelected = characterPath === char.path;
+                  
+                  return (
+                    <div
+                      key={char.id}
+                      onClick={() => setCharacterPath(char.path)}
+                      style={{
+                        width: "100%",
+                        aspectRatio: "1/1",
+                        borderRadius: 10,
+                        cursor: "pointer",
+                        overflow: "hidden",
+                        border: isSelected
+                          ? "3px solid rgba(120, 72, 32, 0.95)"
+                          : "2px solid rgba(78,52,28,0.3)",
+                        boxShadow: isSelected
+                          ? "0 0 12px rgba(120, 72, 32, 0.5)"
+                          : "none",
+                        transform: isSelected ? "scale(1.05)" : "scale(1)",
+                        transition: "all 0.2s ease-in-out",
+                        background: "rgba(255,255,255,0.4)",
+                      }}
+                    >
+                      {/* Yang dirender/ditampilkan adalah char.icon */}
+                      <img 
+                        src={char.icon} 
+                        alt={`Icon ${char.id}`} 
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} 
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div style={{ marginTop: 12 }}>
               <Button type="submit" style={{ width: "100%" }} disabled={loading}>
                 {loading ? "Menempa akun..." : "Create Account"}
               </Button>

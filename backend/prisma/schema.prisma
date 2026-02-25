@@ -23,6 +23,7 @@ model User {
   name         String
   email        String   @unique
   passwordHash String
+  avatarPath String?
   createdAt    DateTime @default(now())
 
   forms        Form[]

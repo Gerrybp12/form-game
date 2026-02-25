@@ -2,7 +2,7 @@ const bcrypt = require("bcrypt");
 const prisma = require("../config/prisma");
 const { signToken } = require("../utils/jwt");
 
-async function register({ name, email, password }) {
+async function register({ name, email, password, avatarPath }) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     const err = new Error("Email already used");
@@ -13,8 +13,8 @@ async function register({ name, email, password }) {
   const passwordHash = await bcrypt.hash(password, 10);
 
   const user = await prisma.user.create({
-    data: { name, email, passwordHash },
-    select: { id: true, name: true, email: true, createdAt: true },
+    data: { name, email, passwordHash, avatarPath: avatarPath ?? null },
+    select: { id: true, name: true, email: true, avatarPath:true, createdAt: true },
   });
 
   const token = signToken({ sub: user.id });
@@ -37,7 +37,7 @@ async function login({ email, password }) {
   }
 
   const token = signToken({ sub: user.id });
-  return { user: { id: user.id, name: user.name, email: user.email }, token };
+  return { user: { id: user.id, name: user.name, email: user.email, avatarPath: user.avatarPath }, token };
 }
 
 module.exports = { register, login };
