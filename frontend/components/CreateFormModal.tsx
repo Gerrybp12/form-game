@@ -81,7 +81,7 @@ export default function CreateFormModal({ open, onClose, onSuccess }: Props) {
           }}
         >
           <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: 0.5 }}>
-            New Form
+            Gulungan Baru
           </div>
           <button
             onClick={onClose}
@@ -172,7 +172,7 @@ export default function CreateFormModal({ open, onClose, onSuccess }: Props) {
                 opacity: creating ? 0.7 : 1,
               }}
             >
-              Cancel
+              Batal
             </button>
 
             <button
@@ -191,7 +191,7 @@ export default function CreateFormModal({ open, onClose, onSuccess }: Props) {
                 opacity: creating ? 0.8 : 1,
               }}
             >
-              {creating ? "Creating..." : "Create"}
+              {creating ? "Membuat..." : "Buat"}
             </button>
           </div>
         </div>
