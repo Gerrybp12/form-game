@@ -10,9 +10,16 @@ type Props = {
   formId: string | null;
   onClose: () => void;
   onEdit: (id: string) => void; // Fungsi untuk berpindah ke mode edit
+  onRespons: (id: string) => void;
 };
 
-export default function FormDetailModal({ open, formId, onClose, onEdit }: Props) {
+export default function FormDetailModal({
+  open,
+  formId,
+  onClose,
+  onEdit,
+  onRespons,
+}: Props) {
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -124,20 +131,48 @@ export default function FormDetailModal({ open, formId, onClose, onEdit }: Props
               {error}
             </div>
           ) : loading || !data ? (
-            <div style={{ textAlign: "center", padding: "40px 0", fontWeight: 700, opacity: 0.7 }}>
+            <div
+              style={{
+                textAlign: "center",
+                padding: "40px 0",
+                fontWeight: 700,
+                opacity: 0.7,
+              }}
+            >
               Membaca isi gulungan...
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              
               {/* Info Utama */}
-              <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 16, alignItems: "flex-start" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  justifyContent: "space-between",
+                  gap: 16,
+                  alignItems: "flex-start",
+                }}
+              >
                 <div>
-                  <h1 style={{ fontSize: 24, fontWeight: 900, margin: "0 0 8px 0", color: "rgba(60,36,14,0.95)" }}>
+                  <h1
+                    style={{
+                      fontSize: 24,
+                      fontWeight: 900,
+                      margin: "0 0 8px 0",
+                      color: "rgba(60,36,14,0.95)",
+                    }}
+                  >
                     {data.title}
                   </h1>
                   {data.description && (
-                    <p style={{ margin: 0, fontSize: 15, opacity: 0.85, lineHeight: 1.5 }}>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 15,
+                        opacity: 0.85,
+                        lineHeight: 1.5,
+                      }}
+                    >
                       {data.description}
                     </p>
                   )}
@@ -148,8 +183,14 @@ export default function FormDetailModal({ open, formId, onClose, onEdit }: Props
                         fontWeight: 800,
                         padding: "4px 10px",
                         borderRadius: 20,
-                        background: data.status === "PUBLISHED" ? "rgba(34, 139, 34, 0.2)" : "rgba(120, 72, 32, 0.15)",
-                        color: data.status === "PUBLISHED" ? "#006400" : "rgba(120, 72, 32, 0.95)",
+                        background:
+                          data.status === "PUBLISHED"
+                            ? "rgba(34, 139, 34, 0.2)"
+                            : "rgba(120, 72, 32, 0.15)",
+                        color:
+                          data.status === "PUBLISHED"
+                            ? "#006400"
+                            : "rgba(120, 72, 32, 0.95)",
                         border: `1px solid ${data.status === "PUBLISHED" ? "rgba(34, 139, 34, 0.4)" : "rgba(120, 72, 32, 0.3)"}`,
                       }}
                     >
@@ -159,17 +200,18 @@ export default function FormDetailModal({ open, formId, onClose, onEdit }: Props
                 </div>
 
                 <div style={{ display: "flex", gap: 8 }}>
-                  <Button 
-                    variant="primary" 
+                  <Button
+                    variant="primary"
                     onClick={() => onEdit(data.id)} // Memicu swap ke layar Edit
                   >
                     Pahat Pertanyaan
                   </Button>
-                  <Link href={`/public/forms/${data.id}`} style={{ pointerEvents: data.status !== "PUBLISHED" ? "none" : "auto" }}>
-                    <Button variant="secondary" disabled={data.status !== "PUBLISHED"}>
-                      Segel Publik
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="secondary"
+                    onClick={() => onRespons(data.id)}
+                  >
+                    Responses
+                  </Button>
                 </div>
               </div>
 
@@ -178,12 +220,28 @@ export default function FormDetailModal({ open, formId, onClose, onEdit }: Props
 
               {/* Daftar Pertanyaan */}
               <div>
-                <h2 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 16px 0", color: "rgba(60,36,14,0.95)" }}>
+                <h2
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 800,
+                    margin: "0 0 16px 0",
+                    color: "rgba(60,36,14,0.95)",
+                  }}
+                >
                   Isi Pertanyaan
                 </h2>
-                
+
                 {data.questions?.length ? (
-                  <ol style={{ padding: 0, margin: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 12 }}>
+                  <ol
+                    style={{
+                      padding: 0,
+                      margin: 0,
+                      listStyle: "none",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12,
+                    }}
+                  >
                     {data.questions.map((q: any) => (
                       <li
                         key={q.id}
@@ -198,10 +256,22 @@ export default function FormDetailModal({ open, formId, onClose, onEdit }: Props
                           gap: 16,
                         }}
                       >
-                        <div style={{ fontSize: 15, fontWeight: 800, color: "rgba(40,24,10,0.95)" }}>
+                        <div
+                          style={{
+                            fontSize: 15,
+                            fontWeight: 800,
+                            color: "rgba(40,24,10,0.95)",
+                          }}
+                        >
                           {q.order}. {q.title}{" "}
                           {q.isRequired && (
-                            <span style={{ fontSize: 12, color: "rgba(200,50,50,0.95)", marginLeft: 4 }}>
+                            <span
+                              style={{
+                                fontSize: 12,
+                                color: "rgba(200,50,50,0.95)",
+                                marginLeft: 4,
+                              }}
+                            >
                               (Wajib)
                             </span>
                           )}
@@ -223,12 +293,18 @@ export default function FormDetailModal({ open, formId, onClose, onEdit }: Props
                     ))}
                   </ol>
                 ) : (
-                  <p style={{ fontSize: 14, opacity: 0.7, fontStyle: "italic", margin: 0 }}>
+                  <p
+                    style={{
+                      fontSize: 14,
+                      opacity: 0.7,
+                      fontStyle: "italic",
+                      margin: 0,
+                    }}
+                  >
                     Gulungan ini belum memiliki pertanyaan untuk dijawab.
                   </p>
                 )}
               </div>
-
             </div>
           )}
         </div>

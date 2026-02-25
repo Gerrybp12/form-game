@@ -7,6 +7,7 @@ import { clearToken } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/useCurrentUser";
 import ManageFormsModal from "./ManageFormsModal";
+import PublicFormsModal from "./PublicFormsModal";
 
 type Plaza = {
   id: number;
@@ -27,14 +28,15 @@ export default function Game() {
   const [isIntroOpen, setIsIntroOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isYourFormOpen, setIsYourFormOpen] = useState(false);
+  const [isPublicFormsOpen, setIsPublicFormsOpen] = useState(false);
 
   // ref untuk logic di Phaser update()
   const modalOpenRef = useRef(false);
 
   // modalOpenRef harus ngikutin intro/form (bukan isModalOpen)
   useEffect(() => {
-    modalOpenRef.current = isIntroOpen || isFormOpen || isYourFormOpen;
-  }, [isIntroOpen, isFormOpen, isYourFormOpen]);
+    modalOpenRef.current = isIntroOpen || isFormOpen || isYourFormOpen || isPublicFormsOpen;
+  }, [isIntroOpen, isFormOpen, isYourFormOpen, isPublicFormsOpen]);
 
   // ESC untuk nutup modal manapun
   useEffect(() => {
@@ -43,6 +45,7 @@ export default function Game() {
         setIsIntroOpen(false);
         setIsFormOpen(false);
         setIsYourFormOpen(false);
+        setIsPublicFormsOpen(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -54,7 +57,7 @@ export default function Game() {
     const scene = sceneRef.current;
     if (!scene) return;
 
-    const modalOpen = isIntroOpen || isFormOpen || isYourFormOpen;
+    const modalOpen = isIntroOpen || isFormOpen || isYourFormOpen || isPublicFormsOpen;
 
     scene.input.keyboard.enabled = !modalOpen;
 
@@ -62,7 +65,7 @@ export default function Game() {
     if (!modalOpen) {
       scene.input.keyboard.resetKeys();
     }
-  }, [isIntroOpen, isFormOpen, isYourFormOpen]);
+  }, [isIntroOpen, isFormOpen, isYourFormOpen, isPublicFormsOpen]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -496,7 +499,9 @@ export default function Game() {
               setIsIntroOpen(true);
             } else if (plazaId === 1) {
               console.log(setIsYourFormOpen(true));
-            }else if (plazaId) {
+            } else if (plazaId === 3) {
+              console.log(setIsPublicFormsOpen(true));
+            } else if (plazaId) {
               console.log(`Interact: Plaza ${plazaId}`);
             } else {
               console.log("Interact: (not on plaza)");
@@ -695,6 +700,11 @@ export default function Game() {
     <ManageFormsModal
       open={isYourFormOpen}
       onClose={() => setIsYourFormOpen(false)}
+    />
+
+    <PublicFormsModal 
+    open={isPublicFormsOpen}
+    onClose={() => setIsPublicFormsOpen(false)}
     />
   </div>
   );

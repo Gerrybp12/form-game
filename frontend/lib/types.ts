@@ -7,6 +7,8 @@ export type User = {
 export type FormStatus = "DRAFT" | "PUBLISHED";
 
 export type FormListItem = {
+  pin: string;
+  isPrivate: boolean;
   id: string;
   title: string;
   description?: string | null;
