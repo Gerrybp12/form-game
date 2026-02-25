@@ -12,7 +12,12 @@ const submissionsRoutes = require("./routes/submissions.routes");
 
 const swaggerUi = require("swagger-ui-express");
 const YAML = require("yamljs");
-const swaggerDocument = YAML.load("./src/swagger.yaml");
+const path = require("path");
+const swaggerUi = require("swagger-ui-express");
+const YAML = require("yamljs");
+
+const swaggerPath = path.join(process.cwd(), "src", "swagger.yaml");
+const swaggerDocument = YAML.load(swaggerPath);
 const healthRoutes = require("./routes/health.routes");
 const publicRoutes = require("./routes/public.routes");
 
