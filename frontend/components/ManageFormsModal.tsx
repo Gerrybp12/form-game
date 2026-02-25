@@ -5,7 +5,6 @@ import { api } from "@/lib/api";
 import { FormListItem } from "@/lib/types";
 import { useRequireAuth } from "@/lib/requireAuth";
 import Button from "@/components/ui/Button";
-import Link from "next/link";
 import EditFormModal from "./EditFormModal";
 import FormDetailModal from "./FormDetailModal";
 import ResponsesModal from "./ResponsesModal";
@@ -261,11 +260,7 @@ export default function ManageFormsModal({ open, onClose }: Props) {
                           gap: 10,
                         }}
                       >
-                        <p className="mt-1 text-xs text-gray-500">
-                          PIN: {f.pin} {f.isPrivate ? "• Private" : ""}
-                        </p>
-                        <Link
-                          href={`/forms/${f.id}`}
+                        <div
                           style={{
                             fontSize: 16,
                             fontWeight: 800,
@@ -274,7 +269,7 @@ export default function ManageFormsModal({ open, onClose }: Props) {
                           }}
                         >
                           {f.title}
-                        </Link>
+                        </div>
                         <span
                           style={{
                             fontSize: 10,
@@ -294,6 +289,9 @@ export default function ManageFormsModal({ open, onClose }: Props) {
                         >
                           {f.status}
                         </span>
+                        <p className="mt-1 text-xs text-gray-500">
+                          PIN: {f.pin} {f.isPrivate ? "• Private" : ""}
+                        </p>
                       </div>
 
                       {f.description && (
@@ -364,15 +362,6 @@ export default function ManageFormsModal({ open, onClose }: Props) {
                     >
                       {f.status === "PUBLISHED" ? "Unpublish" : "Publish"}
                     </Button>
-
-                    <Link href={`/public/pin/${f.pin}`}>
-                      <Button
-                        variant="secondary"
-                        disabled={f.status !== "PUBLISHED"}
-                      >
-                        Open (PIN)
-                      </Button>
-                    </Link>
                     <Button
                       variant="secondary"
                       onClick={() => togglePrivate(f.id, !f.isPrivate)}
