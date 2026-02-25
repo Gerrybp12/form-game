@@ -5,7 +5,13 @@ import { useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
-type QuestionType = "SHORT_ANSWER" | "MULTIPLE_CHOICE" | "CHECKBOX" | "DROPDOWN";
+type CurrentUser = { id: string; name: string; email: string };
+
+type QuestionType =
+  | "SHORT_ANSWER"
+  | "MULTIPLE_CHOICE"
+  | "CHECKBOX"
+  | "DROPDOWN";
 
 type PublicForm = {
   id: string;
@@ -37,6 +43,8 @@ export default function PublicPinFormModal({ open, pin, onClose }: Props) {
   const [successId, setSuccessId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [anonymous, setAnonymous] = useState(true);
+  const [user, setUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
     if (open && pin) {
@@ -47,7 +55,10 @@ export default function PublicPinFormModal({ open, pin, onClose }: Props) {
           const res = await api.get(`/api/public/pin/${pin}`);
           setForm(res.data.data);
         } catch (e: any) {
-          setError(e?.response?.data?.message ?? "Segel tidak valid atau gulungan telah musnah.");
+          setError(
+            e?.response?.data?.message ??
+              "Segel tidak valid atau gulungan telah musnah.",
+          );
         } finally {
           setLoading(false);
         }
@@ -60,6 +71,18 @@ export default function PublicPinFormModal({ open, pin, onClose }: Props) {
       setSuccessId(null);
     }
   }, [open, pin]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get("/api/auth/me");
+        setUser(res.data.user);
+      } catch {
+        setUser(null);
+        setAnonymous(true); // kalau tidak login, paksa anonim
+      }
+    })();
+  }, []);
 
   function setAnswer(questionId: string, value: any) {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
@@ -93,16 +116,28 @@ export default function PublicPinFormModal({ open, pin, onClose }: Props) {
       setError(null);
       setSubmitting(true);
 
-      const payload = {
-        answers: Object.entries(answers).map(([questionId, value]) => ({
-          questionId,
-          ...(Array.isArray(value)
-            ? { valueOptions: value }
-            : typeof value === "string"
-            ? { valueText: value }
-            : { valueOption: value }),
-        })),
-      };
+      const payload: any = {
+  answers: Object.entries(answers).map(([questionId, value]) => ({
+    questionId,
+    ...(Array.isArray(value)
+      ? { valueOptions: value }
+      : typeof value === "string"
+      ? { valueText: value }
+      : { valueOption: value }),
+  })),
+};
+
+// kalau tidak anonim, kirim username dari /me
+if (!anonymous) {
+  if (!user) {
+    setError("Kamu harus login untuk mengirim tidak anonim.");
+    setSubmitting(false);
+    return;
+  }
+  payload.respondentName = user.name;
+  payload.respondentEmail = user.email; // optional, boleh kamu hapus kalau tidak mau kirim email
+}
+
 
       const res = await api.post(`/api/public/pin/${pin}/responses`, payload);
       setSuccessId(res.data?.data?.submissionId ?? "OK");
@@ -115,9 +150,9 @@ export default function PublicPinFormModal({ open, pin, onClose }: Props) {
 
   if (!open) return null;
 
-  // Agar wrapper modal tetap konsisten (tidak hilang-timbul), 
+  // Agar wrapper modal tetap konsisten (tidak hilang-timbul),
   // kita menentukan isi (body) berdasarkan state loading/error/success di dalam satu struktur modal.
-  
+
   return (
     <div
       onClick={onClose}
@@ -143,7 +178,8 @@ export default function PublicPinFormModal({ open, pin, onClose }: Props) {
           border: "3px solid rgba(78, 52, 28, 0.95)",
           boxShadow: "0 18px 60px rgba(0,0,0,0.6)",
           overflow: "hidden",
-          background: "linear-gradient(180deg, rgba(250,239,210,0.98), rgba(233,214,170,0.98))",
+          background:
+            "linear-gradient(180deg, rgba(250,239,210,0.98), rgba(233,214,170,0.98))",
         }}
       >
         {/* Header Section */}
@@ -153,7 +189,8 @@ export default function PublicPinFormModal({ open, pin, onClose }: Props) {
             alignItems: "center",
             justifyContent: "space-between",
             padding: "16px 20px",
-            background: "linear-gradient(180deg, rgba(120, 72, 32, 0.95), rgba(85, 48, 20, 0.95))",
+            background:
+              "linear-gradient(180deg, rgba(120, 72, 32, 0.95), rgba(85, 48, 20, 0.95))",
             color: "rgba(255,255,255,0.95)",
             borderBottom: "2px solid rgba(60,35,12,0.95)",
           }}
@@ -187,16 +224,37 @@ export default function PublicPinFormModal({ open, pin, onClose }: Props) {
           }}
         >
           {loading ? (
-            <div style={{ textAlign: "center", padding: "40px 0", fontWeight: 700, opacity: 0.7 }}>
+            <div
+              style={{
+                textAlign: "center",
+                padding: "40px 0",
+                fontWeight: 700,
+                opacity: 0.7,
+              }}
+            >
               Membuka segel gulungan...
             </div>
           ) : successId ? (
             <div style={{ textAlign: "center", padding: "40px 0" }}>
               <div style={{ fontSize: 40, marginBottom: 16 }}>📜✨</div>
-              <h2 style={{ fontSize: 20, fontWeight: 800, color: "rgba(34, 139, 34, 0.95)" }}>Jawaban Telah Tersegel!</h2>
-              <p style={{ opacity: 0.8, marginTop: 8 }}>Terima kasih telah mengisi gulungan ini.</p>
-              <p style={{ fontSize: 12, opacity: 0.5, marginTop: 4 }}>(ID: {successId})</p>
-              <Button onClick={onClose} style={{ marginTop: 24 }}>Kembali ke Balai</Button>
+              <h2
+                style={{
+                  fontSize: 20,
+                  fontWeight: 800,
+                  color: "rgba(34, 139, 34, 0.95)",
+                }}
+              >
+                Jawaban Telah Tersegel!
+              </h2>
+              <p style={{ opacity: 0.8, marginTop: 8 }}>
+                Terima kasih telah mengisi gulungan ini.
+              </p>
+              <p style={{ fontSize: 12, opacity: 0.5, marginTop: 4 }}>
+                (ID: {successId})
+              </p>
+              <Button onClick={onClose} style={{ marginTop: 24 }}>
+                Kembali ke Balai
+              </Button>
             </div>
           ) : error && !form ? (
             <div style={{ textAlign: "center", padding: "40px 0" }}>
@@ -208,7 +266,7 @@ export default function PublicPinFormModal({ open, pin, onClose }: Props) {
                   border: "2px solid rgba(220, 38, 38, 0.3)",
                   color: "rgba(220, 38, 38, 0.95)",
                   fontWeight: 800,
-                  display: "inline-block"
+                  display: "inline-block",
                 }}
               >
                 {error}
@@ -219,22 +277,52 @@ export default function PublicPinFormModal({ open, pin, onClose }: Props) {
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              
               {/* Header Info Form */}
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.6, marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    opacity: 0.6,
+                    marginBottom: 4,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
                   <span>Segel: {form?.pin}</span>
                   {form?.isPrivate && (
-                    <span style={{ background: "rgba(120,72,32,0.1)", padding: "2px 8px", borderRadius: 12, border: "1px solid rgba(120,72,32,0.2)" }}>
+                    <span
+                      style={{
+                        background: "rgba(120,72,32,0.1)",
+                        padding: "2px 8px",
+                        borderRadius: 12,
+                        border: "1px solid rgba(120,72,32,0.2)",
+                      }}
+                    >
                       Privat
                     </span>
                   )}
                 </div>
-                <h1 style={{ fontSize: 26, fontWeight: 900, color: "rgba(60,36,14,0.95)", margin: "0 0 8px 0" }}>
+                <h1
+                  style={{
+                    fontSize: 26,
+                    fontWeight: 900,
+                    color: "rgba(60,36,14,0.95)",
+                    margin: "0 0 8px 0",
+                  }}
+                >
                   {form?.title}
                 </h1>
                 {form?.description && (
-                  <p style={{ margin: 0, fontSize: 15, opacity: 0.85, lineHeight: 1.5 }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 15,
+                      opacity: 0.85,
+                      lineHeight: 1.5,
+                    }}
+                  >
                     {form.description}
                   </p>
                 )}
@@ -244,18 +332,72 @@ export default function PublicPinFormModal({ open, pin, onClose }: Props) {
 
               {/* Error Pesan (Jika ada error saat submit) */}
               {error && (
-                <div style={{ padding: 12, borderRadius: 8, background: "rgba(220, 38, 38, 0.1)", border: "1px solid rgba(220, 38, 38, 0.3)", color: "rgba(220, 38, 38, 0.95)", fontSize: 14, fontWeight: 700 }}>
+                <div
+                  style={{
+                    padding: 12,
+                    borderRadius: 8,
+                    background: "rgba(220, 38, 38, 0.1)",
+                    border: "1px solid rgba(220, 38, 38, 0.3)",
+                    color: "rgba(220, 38, 38, 0.95)",
+                    fontSize: 14,
+                    fontWeight: 700,
+                  }}
+                >
                   {error}
                 </div>
               )}
 
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={anonymous}
+                  onChange={(e) => {
+                    const next = e.target.checked;
+                    if (!user && !next) return; // belum login -> tidak boleh non-anon
+                    setAnonymous(next);
+                  }}
+                />
+                Kirim sebagai anonim
+                {!user ? (
+                  <span className="text-xs text-gray-500">
+                    (login untuk kirim pakai username)
+                  </span>
+                ) : null}
+              </label>
+
               {/* List Pertanyaan */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 16 }}
+              >
                 {form?.questions.map((q) => (
-                  <div key={q.id} style={{ background: "rgba(255,255,255,0.35)", border: "2px solid rgba(78,52,28,0.2)", borderRadius: 12, padding: 20 }}>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: "rgba(40,24,10,0.95)", marginBottom: 12 }}>
+                  <div
+                    key={q.id}
+                    style={{
+                      background: "rgba(255,255,255,0.35)",
+                      border: "2px solid rgba(78,52,28,0.2)",
+                      borderRadius: 12,
+                      padding: 20,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 800,
+                        color: "rgba(40,24,10,0.95)",
+                        marginBottom: 12,
+                      }}
+                    >
                       {q.order}. {q.title}{" "}
-                      {q.isRequired && <span style={{ color: "rgba(200,50,50,0.95)", fontSize: 14 }}>*</span>}
+                      {q.isRequired && (
+                        <span
+                          style={{
+                            color: "rgba(200,50,50,0.95)",
+                            fontSize: 14,
+                          }}
+                        >
+                          *
+                        </span>
+                      )}
                     </div>
 
                     {q.type === "SHORT_ANSWER" && (
@@ -267,15 +409,35 @@ export default function PublicPinFormModal({ open, pin, onClose }: Props) {
                     )}
 
                     {q.type === "MULTIPLE_CHOICE" && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 8,
+                        }}
+                      >
                         {q.options.map((o) => (
-                          <label key={o.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 15, cursor: "pointer", opacity: 0.9 }}>
+                          <label
+                            key={o.id}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                              fontSize: 15,
+                              cursor: "pointer",
+                              opacity: 0.9,
+                            }}
+                          >
                             <input
                               type="radio"
                               name={q.id}
                               checked={answers[q.id] === o.id}
                               onChange={() => setAnswer(q.id, o.id)}
-                              style={{ width: 18, height: 18, accentColor: "rgba(120, 72, 32, 0.95)" }}
+                              style={{
+                                width: 18,
+                                height: 18,
+                                accentColor: "rgba(120, 72, 32, 0.95)",
+                              }}
                             />
                             {o.text}
                           </label>
@@ -284,20 +446,45 @@ export default function PublicPinFormModal({ open, pin, onClose }: Props) {
                     )}
 
                     {q.type === "CHECKBOX" && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 8,
+                        }}
+                      >
                         {q.options.map((o) => {
                           const arr: string[] = answers[q.id] || [];
                           const checked = arr.includes(o.id);
                           return (
-                            <label key={o.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 15, cursor: "pointer", opacity: 0.9 }}>
+                            <label
+                              key={o.id}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                                fontSize: 15,
+                                cursor: "pointer",
+                                opacity: 0.9,
+                              }}
+                            >
                               <input
                                 type="checkbox"
                                 checked={checked}
                                 onChange={(e) => {
-                                  if (e.target.checked) setAnswer(q.id, [...arr, o.id]);
-                                  else setAnswer(q.id, arr.filter((x) => x !== o.id));
+                                  if (e.target.checked)
+                                    setAnswer(q.id, [...arr, o.id]);
+                                  else
+                                    setAnswer(
+                                      q.id,
+                                      arr.filter((x) => x !== o.id),
+                                    );
                                 }}
-                                style={{ width: 18, height: 18, accentColor: "rgba(120, 72, 32, 0.95)" }}
+                                style={{
+                                  width: 18,
+                                  height: 18,
+                                  accentColor: "rgba(120, 72, 32, 0.95)",
+                                }}
                               />
                               {o.text}
                             </label>
@@ -310,7 +497,17 @@ export default function PublicPinFormModal({ open, pin, onClose }: Props) {
                       <select
                         value={answers[q.id] ?? ""}
                         onChange={(e) => setAnswer(q.id, e.target.value)}
-                        style={{ padding: "10px 12px", borderRadius: 8, border: "2px solid rgba(78,52,28,0.5)", background: "rgba(255,255,255,0.7)", color: "rgba(40, 24, 10, 0.95)", fontSize: 15, outline: "none", width: "100%", cursor: "pointer" }}
+                        style={{
+                          padding: "10px 12px",
+                          borderRadius: 8,
+                          border: "2px solid rgba(78,52,28,0.5)",
+                          background: "rgba(255,255,255,0.7)",
+                          color: "rgba(40, 24, 10, 0.95)",
+                          fontSize: 15,
+                          outline: "none",
+                          width: "100%",
+                          cursor: "pointer",
+                        }}
                       >
                         <option value="">-- Pilih --</option>
                         {q.options.map((o) => (
@@ -325,12 +522,21 @@ export default function PublicPinFormModal({ open, pin, onClose }: Props) {
               </div>
 
               {/* Tombol Kirim */}
-              <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>
-                <Button onClick={submit} disabled={submitting} style={{ padding: "12px 24px", fontSize: 16 }}>
+              <div
+                style={{
+                  marginTop: 8,
+                  display: "flex",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <Button
+                  onClick={submit}
+                  disabled={submitting}
+                  style={{ padding: "12px 24px", fontSize: 16 }}
+                >
                   {submitting ? "Menyegel..." : "Segel & Kirim Jawaban"}
                 </Button>
               </div>
-
             </div>
           )}
         </div>
