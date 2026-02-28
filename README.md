@@ -5,6 +5,10 @@ Project ini terdiri dari backend (Express + Prisma) dan frontend (Next.js).
 
 ---
 
+# Deployment
+Frontend: https://form-game-mnmb.vercel.app/
+Backend: https://form-game-two.vercel.app/
+
 # 🏗️ Tech Stack
 
 ## Backend
