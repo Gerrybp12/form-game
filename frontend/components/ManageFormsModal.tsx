@@ -81,8 +81,8 @@ export default function ManageFormsModal({ open, onClose }: Props) {
         open={true}
         formId={editFormId}
         onClose={() => {
-          setEditFormId(null); // Saat ditutup, kembali ke daftar form
-          load(); // Opsional: muat ulang daftar untuk update jumlah pertanyaan
+          setEditFormId(null);
+          load();
         }}
       />
     );
@@ -102,14 +102,14 @@ export default function ManageFormsModal({ open, onClose }: Props) {
       <FormDetailModal
         open={true}
         formId={detailFormId}
-        onClose={() => setDetailFormId(null)} // Tutup detail -> kembali ke List
+        onClose={() => setDetailFormId(null)} 
         onEdit={(id) => {
-          setDetailFormId(null); // Tutup Detail
-          setEditFormId(id); // Langsung buka Edit
+          setDetailFormId(null); 
+          setEditFormId(id); 
         }}
         onRespons={(id) => {
-          setDetailFormId(null); // Tutup Detail
-          setResponsesFormId(id); // Langsung buka Edit
+          setDetailFormId(null);
+          setResponsesFormId(id); 
         }}
       />
     );
@@ -119,7 +119,7 @@ export default function ManageFormsModal({ open, onClose }: Props) {
     <div
       onClick={onClose}
       style={{
-        position: "fixed", // Pakai fixed agar scroll layar utama terkunci
+        position: "fixed",
         inset: 0,
         background: "rgba(0,0,0,0.65)",
         display: "flex",
@@ -132,8 +132,8 @@ export default function ManageFormsModal({ open, onClose }: Props) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: "min(760px, 95vw)", // Diperlebar sedikit agar muat banyak tombol
-          maxHeight: "90vh", // Batasi tinggi maksimum modal
+          width: "min(760px, 95vw)", 
+          maxHeight: "90vh", 
           display: "flex",
           flexDirection: "column",
           borderRadius: 14,
@@ -186,7 +186,7 @@ export default function ManageFormsModal({ open, onClose }: Props) {
           style={{
             padding: 20,
             overflowY: "auto",
-            flex: 1, // Agar area ini yang bisa di-scroll
+            flex: 1, 
             color: "rgba(40, 24, 10, 0.95)",
           }}
         >
@@ -347,7 +347,7 @@ export default function ManageFormsModal({ open, onClose }: Props) {
                       onClick={() => setEditFormId(f.id)}
                       style={{ padding: "6px 12px", fontSize: 12 }}
                     >
-                      Edit Questions
+                      Pahat Pertanyaan
                     </Button>
 
                     <Button
@@ -376,7 +376,7 @@ export default function ManageFormsModal({ open, onClose }: Props) {
                         padding: "6px 12px",
                         fontSize: 12,
                         marginLeft: "auto",
-                      }} // Margin left auto dorong delete ke kanan
+                      }} 
                     >
                       Bakar
                     </Button>
