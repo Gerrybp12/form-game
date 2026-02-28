@@ -20,28 +20,6 @@ Project ini terdiri dari backend (Express + Prisma) dan frontend (Next.js).
 
 ---
 
-# 📂 Project Structure
-
-
-form-fame/
-│
-├── backend/
-│ ├── prisma/
-│ ├── src/
-│ ├── package.json
-│ └── .env (tidak di-commit)
-│
-├── frontend/
-│ ├── app/
-│ ├── components/
-│ ├── package.json
-│ └── .env.local (tidak di-commit)
-│
-└── README.md
-
-
----
-
 # ⚙️ Requirements
 
 - Node.js v18 atau lebih baru
