@@ -11,7 +11,7 @@ import PublicFormsModal from "./PublicFormsModal";
 
 type Plaza = {
   id: number;
-  rect: { x: number; y: number; w: number; h: number }; // world coords
+  rect: { x: number; y: number; w: number; h: number };
 };
 
 export default function Game() {
@@ -19,16 +19,13 @@ export default function Game() {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<any>(null);
 
-  // simpan scene buat enable/disable keyboard Phaser saat modal open
   const sceneRef = useRef<any>(null);
 
-  // modal states
   const [isIntroOpen, setIsIntroOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isYourFormOpen, setIsYourFormOpen] = useState(false);
   const [isPublicFormsOpen, setIsPublicFormsOpen] = useState(false);
 
-  // ref untuk logic di Phaser update()
   const modalOpenRef = useRef(false);
   const pendingAvatarRef = useRef<string | null>(null);
   const appliedAvatarRef = useRef<string | null>(null);
